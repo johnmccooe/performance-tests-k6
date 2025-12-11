@@ -12,7 +12,7 @@ pipeline {
         stage('Fix Docker Socket Permissions') {
             steps {
                 echo "Temporarily modifying Docker socket permissions for DinD access..."
-                sh 'sudo chmod 666 /var/run/docker.sock'
+                sh 'chmod 666 /var/run/docker.sock'
             }
         }
         
