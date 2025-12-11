@@ -4,7 +4,8 @@ pipeline {
         docker {
             image 'grafana/k6:latest' // Use the official k6 image
             // We mount the Jenkins workspace into the container's working directory.
-            args '-u root -v $PWD:$PWD -w $PWD' 
+            args '-v $PWD:$PWD -w $PWD'
+	    user '0.0' 
         }
     }
 
