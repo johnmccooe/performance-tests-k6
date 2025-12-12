@@ -22,11 +22,15 @@ pipeline {
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
-                // FINAL SUCCESSFUL COMMAND: This uses the direct Jenkins variable ${WORKSPACE} 
-                // for the host path in the volume mount, guaranteeing correct path resolution 
-                // and ensuring the k6 runner can find the script inside the /home/k6 directory.
                 script {
-                    sh "docker run --rm -u 0:0 -v ${WORKSPACE}:/home/k6 -w /home/k6 grafana/k6:latest run /home/k6/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST}"
+                    // 1. ISOLATE AND COPY: Mounts the Jenkins workspace to a temporary /src directory 
+                    // and copies all contents into a persistent Docker Volume named 'k6_data'.
+                    // This bypasses the flaky direct host-to-container volume mount.
+                    sh "docker run --rm -v ${WORKSPACE}:/src -v k6_data:/data busybox cp -r /src/. /data"
+                    
+                    // 2. EXECUTE: Mounts the reliable 'k6_data' volume directly into the k6 
+                    // container's native working directory (/home/k6).
+                    sh "docker run --rm -v k6_data:/home/k6 -w /home/k6 grafana/k6:latest run /home/k6/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST}"
                 }
             }
         }
