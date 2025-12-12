@@ -20,8 +20,10 @@ pipeline {
             agent {
                 docker {
                     image 'grafana/k6:latest'
-                    args '-u 0:0 sh -c "cat"'
-                }
+                    args '-u 0:0' // Keep only the essential user ID fix in args
+                    // FINAL FIX: Use the 'command' field to run a shell that persists
+                    command 'cat' // This tells the container to run 'cat', which holds it open until Jenkins executes 'k6 run'
+            	}
             }
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
