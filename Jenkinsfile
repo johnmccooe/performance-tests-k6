@@ -19,24 +19,22 @@ pipeline {
         }
         
         stage('Run Load Test (Protocol Level)') {
-        steps {
-            echo "Running k6 test: ${env.K6_SCRIPT}"
-
-            script {
-                // ABSOLUTE FINAL HARDCODE FIX: Using the explicit Windows path to bypass 
-                // Jenkins variable resolution errors and ensure Docker Desktop can read the volume.
-                sh """
-                    docker run --rm -u 0:0 \
-                    --entrypoint "/bin/sh" \
-                    -v C:/k6_project:/src \ // <--- ***CRITICAL CHANGE HERE***
-                    grafana/k6:latest -c " \
-                    cp -r /src/. /data && \
-                    k6 run /data/${env.K6_SCRIPT} --out influxdb=http://your-influxdb-host:8086 \
-                    "
-                """
+            steps {
+                echo "Running k6 test: ${env.K6_SCRIPT}"
+                
+                script {
+                    sh """
+                        docker run --rm -u 0:0 \
+                        --entrypoint "/bin/sh" \
+                        -v C:/k6_project:/src \
+                        grafana/k6:latest -c " \
+                        cp -r /src/. /data && \
+                        k6 run /data/${env.K6_SCRIPT} --out influxdb=http://your-influxdb-host:8086 \
+                        "
+                    """
+                }
             }
         }
-    }
         
         stage('Enforce Performance Thresholds') {
             steps {
@@ -47,7 +45,6 @@ pipeline {
     
     post {
         always {
-            // Clears the workspace directory
             deleteDir()
         }
     }
