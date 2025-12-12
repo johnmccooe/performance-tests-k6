@@ -23,9 +23,13 @@ pipeline {
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
-                // FINAL DEFINITIVE FIX: Executes the Docker run command manually within a script block.
-                // This uses the absolute path (\$PWD) for the script to resolve the "file not found" error.
+                // *** DEBUG STEP: LISTS WORKSPACE CONTENTS TO FIND CORRECT FILENAME ***
                 script {
+                    sh 'ls -al'
+                    
+                    // FINAL DEFINITIVE FIX: Executes the Docker run command manually within a script block.
+                    // Uses the absolute path (\$PWD) for the script. We will correct the script name 
+                    // after seeing the output from the 'ls -al' command above.
                     sh """
                         docker run --rm -u 0:0 \
                         -v \$PWD:\$PWD -w \$PWD \
