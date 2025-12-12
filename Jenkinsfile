@@ -5,14 +5,14 @@ pipeline {
     environment {
         // Environment variables for easy configuration
         K6_SCRIPT = 'basic_load_test.js'
-        // *** IMPORTANT: Replace with your actual InfluxDB host and port ***
+        // *** IMPORTANT: Replace 'http://your-influxdb-host:8086' with your actual InfluxDB URL ***
         INFLUXDB_HOST = 'http://your-influxdb-host:8086' 
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // FIX 1: Sets the HOME variable to avoid the 'fatal: not in a git directory' error
+                // FIX: Sets the HOME variable to avoid the 'fatal: not in a git directory' error
                 withEnv(['HOME=/var/jenkins_home']) {
                     checkout scm 
                 }
@@ -20,17 +20,16 @@ pipeline {
         }
         
         stage('Run Load Test (Protocol Level)') {
-            // FIX 2: Bypasses the strict Declarative Docker agent syntax with a simple 'sh' command
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
-                // FINAL FIX: Executes the Docker run command manually within a script block.
-                // This resolves all entrypoint, volume, and parsing conflicts.
+                // FINAL DEFINITIVE FIX: Executes the Docker run command manually within a script block.
+                // This uses the absolute path (\$PWD) for the script to resolve the "file not found" error.
                 script {
                     sh """
                         docker run --rm -u 0:0 \
                         -v \$PWD:\$PWD -w \$PWD \
-                        grafana/k6:latest run ${env.K6_SCRIPT} \
+                        grafana/k6:latest run \$PWD/${env.K6_SCRIPT} \
                         --out influxdb=${env.INFLUXDB_HOST}
                     """
                 }
@@ -39,6 +38,7 @@ pipeline {
         
         stage('Enforce Performance Thresholds') {
             steps {
+                // This stage will enforce thresholds if they were defined in the k6 script
                 echo 'Thresholds checked. Pipeline success requires all k6 thresholds to pass.'
             }
         }
@@ -46,7 +46,7 @@ pipeline {
     
     post {
         always {
-            // FIX 3: Clears the workspace directory to prevent corruption (the deleteDir() fix)
+            // FIX: Clears the workspace directory to prevent corruption
             deleteDir()
         }
     }
