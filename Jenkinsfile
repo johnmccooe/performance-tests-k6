@@ -26,10 +26,9 @@ pipeline {
                     def containerId
                     
                     try {
-                        // 1. Start k6 container in detached mode (-d). The escaped quotes are 
-                        // critical for passing the "sleep 3600" command correctly to /bin/sh -c 
-                        // when nested inside the Groovy string, keeping the container alive.
-                        containerId = sh(returnStdout: true, script: "docker run -d -u 0:0 grafana/k6:latest /bin/sh -c \"sleep 3600\"").trim() 
+                        // 1. Start k6 container in detached mode (-d). Using Groovy's triple-single-quote
+                        // heredoc ensures the internal quotes for "sleep 3600" are preserved for the shell.
+                        containerId = sh(returnStdout: true, script: '''docker run -d -u 0:0 grafana/k6:latest /bin/sh -c "sleep 3600"''').trim()
                         echo "k6 container started with ID: ${containerId}"
                         
                         // 2. Use 'docker cp' to stream files from the Jenkins workspace into the container.
