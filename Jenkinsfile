@@ -20,7 +20,7 @@ pipeline {
             agent {
                 docker {
                     image 'grafana/k6:latest'
-                    args '-u 0:0 -v $PWD:$PWD -w $PWD' 
+                    args '-u 0:0' 
                 }
             }
             steps {
