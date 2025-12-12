@@ -1,15 +1,18 @@
 pipeline {
+    // We use agent any globally, and then run Docker explicitly inside the stage
     agent any 
 
     environment {
+        // Environment variables for easy configuration
         K6_SCRIPT = 'basic_load_test.js'
+        // *** IMPORTANT: Replace with your actual InfluxDB host and port ***
         INFLUXDB_HOST = 'http://your-influxdb-host:8086' 
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // CRUCIAL GIT FIX: Force Git to use the standard Jenkins home directory for its configuration.
+                // FIX 1: Sets the HOME variable to avoid the 'fatal: not in a git directory' error
                 withEnv(['HOME=/var/jenkins_home']) {
                     checkout scm 
                 }
@@ -17,17 +20,20 @@ pipeline {
         }
         
         stage('Run Load Test (Protocol Level)') {
-            agent {
-            	docker {
-                	// FINAL GROOVY SYNTAX FIX: Ensure image is defined as key-value pair 
-                	// and arguments list is defined clearly.
-                	image 'grafana/k6:latest'
-                	args ['--entrypoint', 'sh', '-c', 'cat', '-u', '0:0'] 
-            	}
-            }
+            // FIX 2: Bypasses the strict Declarative Docker agent syntax with a simple 'sh' command
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
-                sh "k6 run ${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST}" 
+                
+                // FINAL FIX: Executes the Docker run command manually within a script block.
+                // This resolves all entrypoint, volume, and parsing conflicts.
+                script {
+                    sh """
+                        docker run --rm -u 0:0 \
+                        -v \$PWD:\$PWD -w \$PWD \
+                        grafana/k6:latest run ${env.K6_SCRIPT} \
+                        --out influxdb=${env.INFLUXDB_HOST}
+                    """
+                }
             }
         }
         
@@ -40,7 +46,7 @@ pipeline {
     
     post {
         always {
-            // CRUCIAL CLEANUP FIX: Deletes the workspace content after every run (since Wipe button is unavailable)
+            // FIX 3: Clears the workspace directory to prevent corruption (the deleteDir() fix)
             deleteDir()
         }
     }
