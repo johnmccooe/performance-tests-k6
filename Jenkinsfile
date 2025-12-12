@@ -1,5 +1,4 @@
 pipeline {
-    // We use agent any globally, and then run Docker explicitly inside the stage
     agent any 
 
     environment {
@@ -12,7 +11,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // FIX: Sets the HOME variable to avoid the 'fatal: not in a git directory' error
+                // Fix: Sets the HOME variable to avoid the 'fatal: not in a git directory' error
                 withEnv(['HOME=/var/jenkins_home']) {
                     checkout scm 
                 }
@@ -23,17 +22,14 @@ pipeline {
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
-                // *** DEBUG STEP: LISTS WORKSPACE CONTENTS TO FIND CORRECT FILENAME ***
+                // FINAL SUCCESSFUL COMMAND: Executes the Docker run command manually, 
+                // mounting the Jenkins workspace (\$PWD) directly to the k6 container's native 
+                // working directory (/home/k6) to guarantee read access to the script.
                 script {
-                    sh 'ls -al'
-                    
-                    // FINAL DEFINITIVE FIX: Executes the Docker run command manually within a script block.
-                    // Uses the absolute path (\$PWD) for the script. We will correct the script name 
-                    // after seeing the output from the 'ls -al' command above.
                     sh """
                         docker run --rm -u 0:0 \
-                        -v \$PWD:\$PWD -w \$PWD \
-                        grafana/k6:latest run \$PWD/${env.K6_SCRIPT} \
+                        -v \$PWD:/home/k6 -w /home/k6 \
+                        grafana/k6:latest run /home/k6/${env.K6_SCRIPT} \
                         --out influxdb=${env.INFLUXDB_HOST}
                     """
                 }
@@ -42,7 +38,8 @@ pipeline {
         
         stage('Enforce Performance Thresholds') {
             steps {
-                // This stage will enforce thresholds if they were defined in the k6 script
+                // If the k6 run command in the previous stage fails (exit code != 0), 
+                // this stage will be skipped and the pipeline will fail, enforcing thresholds.
                 echo 'Thresholds checked. Pipeline success requires all k6 thresholds to pass.'
             }
         }
@@ -50,7 +47,7 @@ pipeline {
     
     post {
         always {
-            // FIX: Clears the workspace directory to prevent corruption
+            // Fix: Clears the workspace directory to prevent corruption
             deleteDir()
         }
     }
