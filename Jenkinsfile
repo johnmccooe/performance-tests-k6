@@ -26,16 +26,16 @@ pipeline {
                     def containerId
                     
                     try {
-                        // 1. Start k6 container in detached mode (-d). Using Groovy's triple-single-quote
-                        // heredoc ensures the internal quotes for "sleep 3600" are preserved for the shell.
-                        containerId = sh(returnStdout: true, script: '''docker run -d -u 0:0 grafana/k6:latest /bin/sh -c "sleep 3600"''').trim()
+                        // 1. START CONTAINER: Use 'tail -f /dev/null' to keep the container running indefinitely. 
+                        // This bypasses all previous shell and quoting failures.
+                        containerId = sh(returnStdout: true, script: "docker run -d -u 0:0 grafana/k6:latest tail -f /dev/null").trim()
                         echo "k6 container started with ID: ${containerId}"
                         
-                        // 2. Use 'docker cp' to stream files from the Jenkins workspace into the container.
+                        // 2. COPY FILES: Use 'docker cp' to stream files from the Jenkins workspace into the container.
                         sh "docker cp ${WORKSPACE}/. ${containerId}:/home/k6/"
                         echo "Files copied successfully."
 
-                        // 3. Execute the k6 test inside the running container using 'docker exec'
+                        // 3. EXECUTE TEST: Use 'docker exec' to run the k6 test inside the now-running container.
                         sh "docker exec -w /home/k6 ${containerId} k6 run /home/k6/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST}"
                     } finally {
                         // 4. Clean up: Stop and remove the container whether the test passed or failed.
