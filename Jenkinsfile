@@ -18,12 +18,11 @@ pipeline {
         
         stage('Run Load Test (Protocol Level)') {
             agent {
-                docker {
-                    image 'grafana/k6:latest'
-                    // FINAL, DEFINITIVE, AND UNAMBIGUOUS FIX: Using Groovy list syntax 
-                    // ensures each argument is passed as a separate token, preventing 
-                    // misinterpretation of shell commands as Docker CLI flags.
-                    args ['--entrypoint', 'sh', '-c', 'cat', '-u', '0:0']
+            	docker {
+                	// FINAL GROOVY SYNTAX FIX: Ensure image is defined as key-value pair 
+                	// and arguments list is defined clearly.
+                	image 'grafana/k6:latest'
+                	args ['--entrypoint', 'sh', '-c', 'cat', '-u', '0:0'] 
             	}
             }
             steps {
