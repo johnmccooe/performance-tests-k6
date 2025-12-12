@@ -20,7 +20,7 @@ pipeline {
             agent {
                 docker {
                     image 'grafana/k6:latest'
-                    args '-u 0:0' 
+                    args '-u 0:0 sh -c "cat"'
                 }
             }
             steps {
