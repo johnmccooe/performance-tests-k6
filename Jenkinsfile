@@ -27,7 +27,7 @@ pipeline {
                     
                     try {
                         // 1. Start k6 container in detached mode (-d). The quotes around "sleep 3600" 
-                        // are critical to prevent premature container exit in your environment.
+                        // are critical to prevent premature container exit.
                         containerId = sh(returnStdout: true, script: "docker run -d -u 0:0 grafana/k6:latest /bin/sh -c \"sleep 3600\"").trim()
                         echo "k6 container started with ID: ${containerId}"
                         
@@ -38,4 +38,28 @@ pipeline {
                         // 3. Execute the k6 test inside the running container using 'docker exec'
                         sh "docker exec -w /home/k6 ${containerId} k6 run /home/k6/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST}"
                     } finally {
-                        // 4. Clean up: Stop and remove
+                        // 4. Clean up: Stop and remove the container whether the test passed or failed.
+                        if (containerId) {
+                            sh "docker stop ${containerId}"
+                            sh "docker rm ${containerId}"
+                            echo "k6 container cleaned up."
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Enforce Performance Thresholds') {
+            steps {
+                echo 'Thresholds checked. Pipeline success requires all k6 thresholds to pass.'
+            }
+        }
+    }
+    
+    post {
+        always {
+            // Fix: Clears the workspace directory to prevent corruption
+            deleteDir()
+        }
+    }
+}
