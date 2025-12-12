@@ -20,9 +20,10 @@ pipeline {
             agent {
                 docker {
                     image 'grafana/k6:latest'
-                    args '-u 0:0' // Keep only the essential user ID fix in args
-                    // FINAL FIX: Use the 'command' field to run a shell that persists
-                    command 'cat' // This tells the container to run 'cat', which holds it open until Jenkins executes 'k6 run'
+                    // FINAL, DEFINITIVE FIX: Use the --entrypoint flag to force the container 
+                    // to use a persistent shell, avoiding both the invalid volume mount 
+                    // and the 'sh:latest' image name error.
+                    args '--entrypoint=sh -c "cat" -u 0:0'
             	}
             }
             steps {
