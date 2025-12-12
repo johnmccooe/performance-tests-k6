@@ -22,29 +22,19 @@ pipeline {
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
+                // FINAL ENVIRONMENTAL WORKAROUND: This single command mounts the workspace to /src, 
+                // executes an internal shell script to COPY the files to a safe, non-mounted /data 
+                // folder, and then runs k6 from that guaranteed-to-be-present /data location. 
+                // This overcomes the environmental failure of both volume reading and process execution.
                 script {
-                    def containerId
-                    
-                    try {
-                        // 1. START CONTAINER: Use 'tail -f /dev/null' to keep the container running indefinitely. 
-                        // This bypasses all previous shell and quoting failures.
-                        containerId = sh(returnStdout: true, script: "docker run -d -u 0:0 grafana/k6:latest tail -f /dev/null").trim()
-                        echo "k6 container started with ID: ${containerId}"
-                        
-                        // 2. COPY FILES: Use 'docker cp' to stream files from the Jenkins workspace into the container.
-                        sh "docker cp ${WORKSPACE}/. ${containerId}:/home/k6/"
-                        echo "Files copied successfully."
-
-                        // 3. EXECUTE TEST: Use 'docker exec' to run the k6 test inside the now-running container.
-                        sh "docker exec -w /home/k6 ${containerId} k6 run /home/k6/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST}"
-                    } finally {
-                        // 4. Clean up: Stop and remove the container whether the test passed or failed.
-                        if (containerId) {
-                            sh "docker stop ${containerId}"
-                            sh "docker rm ${containerId}"
-                            echo "k6 container cleaned up."
-                        }
-                    }
+                    sh """
+                        docker run --rm -u 0:0 \
+                        -v \$PWD:/src \
+                        grafana/k6:latest /bin/sh -c " \
+                        cp -r /src/. /data && \
+                        k6 run /data/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST} \
+                        "
+                    """
                 }
             }
         }
