@@ -28,7 +28,7 @@ pipeline {
                     try {
                         // 1. Start k6 container in detached mode (-d) and run a long-running command (sleep)
                         // This returns the Container ID, which we capture.
-                        containerId = sh(returnStdout: true, script: "docker run -d -u 0:0 grafana/k6:latest sh -c 'sleep 3600'").trim()
+                        containerId = sh(returnStdout: true, script: "docker run -d -u 0:0 grafana/k6:latest /bin/sh -c 'sleep 3600'").trim()
                         echo "k6 container started with ID: ${containerId}"
                         
                         // 2. Use 'docker cp' to stream files from the Jenkins workspace (${WORKSPACE}) 
