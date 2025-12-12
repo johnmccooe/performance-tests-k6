@@ -4,14 +4,11 @@ pipeline {
     environment {
         // Environment variables for easy configuration
         K6_SCRIPT = 'basic_load_test.js'
-        // *** IMPORTANT: Replace 'http://your-influxdb-host:8086' with your actual InfluxDB URL ***
-        INFLUXDB_HOST = 'http://your-influxdb-host:8086' 
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Ensures SCM content is pulled into the Custom Workspace (e.g., C:\k6_project).
                 withEnv(['HOME=/var/jenkins_home']) {
                     git url: 'https://github.com/johnmccooe/performance-tests-k6.git', branch: 'main'
                 }
@@ -29,7 +26,7 @@ pipeline {
                         -v C:/k6_project:/src \
                         grafana/k6:latest -c " \
                         cp -r /src/. /data && \
-                        k6 run /data/${env.K6_SCRIPT} --out influxdb=http://your-influxdb-host:8086 \
+                        k6 run /data/${env.K6_SCRIPT} \
                         "
                     """
                 }
