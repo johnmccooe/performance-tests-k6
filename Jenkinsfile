@@ -11,8 +11,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // FINAL CHECKOUT FIX: Explicitly calling the 'git' step ensures the SCM 
-                // content is pulled into the Custom Workspace (e.g., C:\k6_project).
+                // Ensures SCM content is pulled into the Custom Workspace (e.g., C:\k6_project).
                 withEnv(['HOME=/var/jenkins_home']) {
                     git url: 'https://github.com/johnmccooe/performance-tests-k6.git', branch: 'main'
                 }
@@ -23,13 +22,13 @@ pipeline {
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
-                // ABSOLUTE FINAL EXECUTION LOGIC: Overrides the entrypoint, mounts the workspace, 
-                // copies files internally, and then runs k6, bypassing all previous environmental failures.
                 script {
+                    // FINAL FIX: Using $WORKSPACE to ensure the path variable contains the 
+                    // Windows path (e.g., C:\k6_project), which Docker Desktop is configured to read.
                     sh """
                         docker run --rm -u 0:0 \
                         --entrypoint "/bin/sh" \
-                        -v \$PWD:/src \
+                        -v $WORKSPACE:/src \
                         grafana/k6:latest -c " \
                         cp -r /src/. /data && \
                         k6 run /data/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST} \
