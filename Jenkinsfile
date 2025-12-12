@@ -22,15 +22,14 @@ pipeline {
             steps {
                 echo "Running k6 test: ${env.K6_SCRIPT}"
                 
-                // FINAL ENVIRONMENTAL WORKAROUND: This single command mounts the workspace to /src, 
-                // executes an internal shell script to COPY the files to a safe, non-mounted /data 
-                // folder, and then runs k6 from that guaranteed-to-be-present /data location. 
-                // This overcomes the environmental failure of both volume reading and process execution.
+                // ABSOLUTE FINAL FIX: Uses --entrypoint "/bin/sh" to ensure the shell script runs first, 
+                // overriding the default 'k6' entrypoint, which was causing the "unknown command" error.
                 script {
                     sh """
                         docker run --rm -u 0:0 \
+                        --entrypoint "/bin/sh" \
                         -v \$PWD:/src \
-                        grafana/k6:latest /bin/sh -c " \
+                        grafana/k6:latest -c " \
                         cp -r /src/. /data && \
                         k6 run /data/${env.K6_SCRIPT} --out influxdb=${env.INFLUXDB_HOST} \
                         "
