@@ -26,7 +26,7 @@ pipeline {
                         -v C:/k6_project:/src \
                         grafana/k6:latest -c " \
                         cp -r /src/. /data && \
-                        k6 run /data/${env.K6_SCRIPT} \
+                        k6 run /data/scripts/${env.K6_SCRIPT} \
                         "
                     """
                 }

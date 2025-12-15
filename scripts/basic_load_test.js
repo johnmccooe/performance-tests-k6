@@ -6,7 +6,7 @@ export const options = {
   duration: '10s',
   thresholds: {
     http_req_failed: ['rate<0.01'], // Fail if more than 1% of requests fail
-    http_req_duration: ['p(95)<200'], // Fail if 95% of requests take longer than 200ms
+    http_req_duration: ['p(95)<10'], // Fail if 95% of requests take longer than 200ms
   },
 };
 
