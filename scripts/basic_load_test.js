@@ -2,8 +2,8 @@ import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 
 export const options = {
-  vus: 5,
-  duration: '10s',
+  //vus: 5,
+  //duration: '10s',
   stages: [
     { duration: '10s', target: 5 }, // Fast ramp for testing
     { duration: '20s', target: 5 }, 
