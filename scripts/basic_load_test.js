@@ -1,9 +1,10 @@
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
-import { Counter } from 'k6/metrics'; // 1. Import the Counter
+import { Counter, Trend } from 'k6/metrics'; // Import Trend
 
 // 2. Define the counter
 const loginCounter = new Counter('successful_logins');
+const loginTimer = new Trend('login_response_time'); // Define Trend
 
 export const options = {
   //vus: 5,
@@ -14,9 +15,9 @@ export const options = {
     { duration: '10s', target: 0 }, 
   ],
   thresholds: {
-    http_req_failed: ['rate<0.01'], // Fail if more than 1% of requests fail
-    http_req_duration: ['p(95)<150'], // Fail if 95% of requests take longer than 200ms
-    // 3. You can even set a threshold on your custom counter!
+    http_req_failed: ['rate<0.01'], 
+    // We can now set a threshold on our SPECIFIC login timer!
+    'login_response_time': ['p(95)<200'], 
     'successful_logins': ['count>50'],
   },
 };
@@ -32,10 +33,12 @@ export default function () {
 
   group('BP02_Login_Page_Access', function () {
     const res = http.get('https://test.k6.io/my_messages.php');
-    const isOk = check(res, { 'login status is 200': (r) => r.status === 200 });
+
+    // Track the duration in our custom Trend
+    loginTimer.add(res.timings.duration);
     
     // 3. Only count it if the check passed
-    if (isOk) {
+    if (res.status === 200) {
       loginCounter.add(1);
     }
   });
