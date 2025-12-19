@@ -3,7 +3,7 @@ import { check, sleep, group } from 'k6';
 import { SharedArray } from 'k6/data';
 import { Counter, Trend } from 'k6/metrics'; 
 // Import papaparse to handle the CSV data
-import papaparse from 'https://jslib.k6.io/papaparse/v1.1.2/index.js'; 
+import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js';
 
 // 1. Initialize custom metrics
 const loginCounter = new Counter('successful_logins');
