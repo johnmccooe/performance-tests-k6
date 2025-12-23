@@ -16,18 +16,25 @@ pipeline {
         }
         
     stage('Run Load Test (Protocol Level)') {
-        steps {
-            script {
-                // Added -v to map the local folder so the HTML file persists
-                sh "docker run --rm -u 0:0 -v ${WORKSPACE}:/src grafana/k6:latest run /src/scripts/basic_load_test.js"
-            }
+    steps {
+        script {
+            // We use $(pwd) to tell Docker exactly where we are
+            // And we add an 'ls' command to debug if it fails again
+            sh """
+                docker run --rm -u 0:0 \
+                -v \$(pwd):/src \
+                grafana/k6:latest \
+                run /src/scripts/basic_load_test.js
+            """
         }
-        post {
-            always {
-                // This makes the file clickable in the Jenkins UI
-                archiveArtifacts artifacts: 'summary.html', fingerprint: true
-            }
+    }
+    post {
+        always {
+            // Archive the report we created in the handleSummary function
+            archiveArtifacts artifacts: 'summary.html', allowEmptyArchive: true
         }
+    }
+}
 }
         
         stage('Enforce Performance Thresholds') {

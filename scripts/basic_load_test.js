@@ -70,7 +70,7 @@ export default function () {
 
   export function handleSummary(data) {
   return {
-    "summary.html": htmlReport(data),
+    "summary.html": htmlReport(data), // This writes it to the current directory
   };
 
   sleep(1);
