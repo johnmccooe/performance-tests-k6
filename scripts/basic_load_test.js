@@ -20,6 +20,8 @@ export const options = {
 };
 
 export default function () {
+  // 1. Initialize variables at the VERY START of the function
+  let vars = {}; 
   const userIndex = (__VU - 1) % userData.length;
   const currentUser = userData[userIndex];
 
@@ -27,23 +29,17 @@ export default function () {
   group('01_Get_Login_Token', function () {
     const res = http.get('https://test.k6.io/my_messages.php');
 
-    // CORRELATION: Find a hidden input field (simulating a CSRF token)
-    // On test.k6.io, we'll just grab the text of the <h2> to prove it works
+    // Extracting the text from the H2 tag
     const capturedValue = res.html().find('h2').text(); 
-    
-    // Store it on the VU's "context" (this is like saving to a parameter)
     const myToken = capturedValue.trim();
+    
     console.log(`VU ${__VU} captured value: ${myToken}`);
 
-    // Check if we actually caught it
     check(res, { 'token captured': (r) => myToken.length > 0 });
 
-    // Save the token for the next step
+    // 2. Now 'vars' is initialized and safe to use
     vars['token'] = myToken;
   });
-
-  // Create a local variable store for this iteration
-  let vars = {};
 
   sleep(1);
 
@@ -52,7 +48,7 @@ export default function () {
     const res = http.post('https://test.k6.io/login.php', {
       login: currentUser.username,
       password: currentUser.password,
-      token: vars['token'], // Using the correlated value!
+      token: vars['token'], // Correctly accessing the saved token
     });
 
     loginTimer.add(res.timings.duration);
