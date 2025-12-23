@@ -34,6 +34,9 @@ export default function () {
     // Extract the text
     const capturedValue = res.html().find('h2').text(); 
     vars['token'] = capturedValue.trim();
+
+    // This will show exactly what k6 "scraped" from the HTML
+    console.log(`DEBUG [VU ${__VU}]: Extracted Token -> "${vars['token']}"`);
     
     check(res, { 'Get Token Status is 200': (r) => r.status === 200 });
   });
@@ -41,8 +44,10 @@ export default function () {
   sleep(1);
 
   group('02_Login_With_Token', function () {
-    // We send the token in the BODY as a standard form field
-    // This is how real CSRF tokens are usually handled
+
+   // This proves the second request is using the value from the first
+    console.log(`DEBUG [VU ${__VU}]: Injecting Token into Login -> "${vars['token']}"`);
+
     const res = http.post('https://test.k6.io/login.php', {
       login: currentUser.username,
       password: currentUser.password,
@@ -58,6 +63,7 @@ export default function () {
       loginCounter.add(1);
     } else {
       console.log(`VU ${__VU} failed with ${res.status}`);
+      console.log(`ERROR [VU ${__VU}]: Login failed with status ${res.status}`);
     }
   });
 
