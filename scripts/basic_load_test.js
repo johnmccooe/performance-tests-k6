@@ -3,6 +3,7 @@ import { check, sleep, group } from 'k6';
 import { SharedArray } from 'k6/data';
 import { Counter, Trend } from 'k6/metrics';
 import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js';
+import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 
 const loginCounter = new Counter('successful_logins');
 const loginTimer = new Trend('login_response_time');
@@ -66,6 +67,11 @@ export default function () {
       console.log(`ERROR [VU ${__VU}]: Login failed with status ${res.status}`);
     }
   });
+
+  export function handleSummary(data) {
+  return {
+    "summary.html": htmlReport(data),
+  };
 
   sleep(1);
 }

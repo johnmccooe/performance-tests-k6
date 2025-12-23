@@ -15,23 +15,20 @@ pipeline {
             }
         }
         
-        stage('Run Load Test (Protocol Level)') {
-            steps {
-                echo "Running k6 test: ${env.K6_SCRIPT}"
-                
-                script {
-                    sh """
-                        docker run --rm -u 0:0 \
-                        --entrypoint "/bin/sh" \
-                        -v C:/k6_project:/src \
-                        grafana/k6:latest -c " \
-                        cp -r /src/. /data && \
-                        k6 run /data/scripts/${env.K6_SCRIPT} \
-                        "
-                    """
-                }
+    stage('Run Load Test (Protocol Level)') {
+        steps {
+            script {
+                // Added -v to map the local folder so the HTML file persists
+                sh "docker run --rm -u 0:0 -v ${WORKSPACE}:/src grafana/k6:latest run /src/scripts/basic_load_test.js"
             }
         }
+        post {
+            always {
+                // This makes the file clickable in the Jenkins UI
+                archiveArtifacts artifacts: 'summary.html', fingerprint: true
+            }
+        }
+}
         
         stage('Enforce Performance Thresholds') {
             steps {
