@@ -1,45 +1,46 @@
 pipeline {
-    agent any 
-
-    environment {
-        // Environment variables for easy configuration
-        K6_SCRIPT = 'basic_load_test.js'
-    }
+    agent any
 
     stages {
         stage('Checkout Code') {
             steps {
-                // This pulls your repo so the scripts folder exists
                 checkout scm
             }
         }
-        
-stage('Run Load Test') {
+
+        stage('Run Load Test') {
             steps {
                 script {
-                    // Running k6 inside Docker and mounting the current workspace to /src
                     sh """
-                        docker run --rm -u 0:0 \
-                        -v \$(pwd):/src \
-                        grafana/k6:latest \
-                        run /src/scripts/basic_load_test.js
+                        # 1. Create a container but don't start it yet
+                        CONTAINER_ID=\$(docker create -u 0:0 grafana/k6:latest run /src/scripts/basic_load_test.js)
+
+                        # 2. Copy the entire current directory into the container's /src folder
+                        docker cp . \${CONTAINER_ID}:/src
+
+                        # 3. Start the container and wait for completion
+                        docker start -a \${CONTAINER_ID}
+
+                        # 4. Pull the summary report out from the root of the container
+                        docker cp \${CONTAINER_ID}:/summary.html ./summary.html || echo "Summary not found"
+
+                        # 5. Clean up the container
+                        docker rm \${CONTAINER_ID}
                     """
                 }
             }
-            // This 'post' belongs to the 'Run Load Test' stage
             post {
                 always {
-                    echo "Test finished. Archiving HTML report..."
+                    echo "Archiving HTML report..."
                     archiveArtifacts artifacts: 'summary.html', allowEmptyArchive: true
                 }
             }
         }
     }
 
-    // Global post actions for cleanup
     post {
         always {
-            deleteDir() 
+            deleteDir()
         }
     }
 }
