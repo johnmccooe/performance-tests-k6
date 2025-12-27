@@ -15,13 +15,16 @@ const userData = new SharedArray('users', function () {
 });
 
 export const options = {
+  
+  // This mimics a modern Chrome browser
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+
   stages: [
     { duration: '5s', target: 5 }, 
     { duration: '10s', target: 5 }, 
     { duration: '5s', target: 0 }
   ],
   thresholds: {
- thresholds: {
     'login_response_time': ['p(95)<500'],
     'http_req_failed': ['rate<0.01'],    // The build will fail if error rate > 1%
     'successful_logins': ['count>=0'],
