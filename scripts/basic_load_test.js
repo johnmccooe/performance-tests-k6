@@ -21,8 +21,14 @@ export const options = {
     { duration: '5s', target: 0 }
   ],
   thresholds: {
+    // 1. Latency: 95% of requests must be under 500ms
     'login_response_time': ['p(95)<500'],
-    'successful_logins': ['count>=0'], 
+
+    // 2. Error Rate: Less than 1% of all HTTP requests can fail
+    'http_req_failed': ['rate<0.01'],
+
+    // 3. Throughput: Ensure we are actually hitting at least 20 logins per test run
+    'successful_logins': ['count>=20'], 
   },
 };
 
@@ -73,5 +79,5 @@ export function handleSummary(data) {
   return {
     "/summary.html": htmlReport(data),
   };
-  
+
 }
